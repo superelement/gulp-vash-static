@@ -236,7 +236,7 @@ function renderPage(opts) {
 		* @param {string} opts.cacheDest - path to the template cache destination
 		* @param {boolean} opts.debugMode - If this is for production, should be false
 		* @param {string[]} opts.dirTypes - Module types (eg "pg", "wg", glb), which correspond to parent directory name of template modules.
-		* @param {string} opts.pageTemplatePath - String for determining the path of the page-level template, where only the page name is known (eg "pg/<%= name %>/tmpl/<%= name %>.vash").
+		* @param {string} opts.pageTemplatePath - String for determining the path of the page-level template, where only the page name is known (eg "pg/<%= moduleName %>/tmpl/<%= fileName %>").
 		* @param {string} opts.combineModelsTask - Gulp task name for combining your models
 		* @param {string} opts.precompileTask - Gulp task name for pre-compiling your vash templates
 		* @param {string} opts.pageRenderTask - Gulp task name for rendering a page
@@ -252,11 +252,14 @@ function watchModelsAndTemplates(opts) {
 
 	return watch(opts.vashSrc.concat(opts.modelSrc), function(vinyl) {
 			
-	    var cacheAndRender = function(type, moduleName, contents) {
+	    var cacheAndRender = function(type, moduleName, contents, fileName) {
 				
 	      vashStatic.updateCache({
 	        type: type
-	        , tmplPath: _.template(opts.pageTemplatePath)({moduleName: moduleName})
+	        , tmplPath: _.template(opts.pageTemplatePath)({
+							moduleName: moduleName
+							, fileName: fileName || "Index.vash"
+					})
 	        , contents: contents
 	        , modelsPath: opts.modelsDest
 	        , cacheDest: opts.cacheDest
@@ -274,7 +277,7 @@ function watchModelsAndTemplates(opts) {
 	      // gets the details needed about the changed vash file from Vinyl object, then updates the template cache and page html
 	      var cnf = getVinylDetails(vinyl, opts.dirTypes)
 
-	      cacheAndRender(cnf.type, cnf.moduleName, vinyl.contents)
+	      cacheAndRender(cnf.type, cnf.moduleName, vinyl.contents, cnf.fileName)
 
 	    } else {
 
