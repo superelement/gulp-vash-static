@@ -60,7 +60,8 @@ function getFirstArg(args) {
     args.forEach(function (arg) {
         if (arg.indexOf("--") === 0) {
             var propArr = arg.split(" ")
-            argVal = propArr[0].toLowerCase().substr(2)
+            // argVal = propArr[0].toLowerCase().substr(2)
+            argVal = propArr[0].substr(2)
         }
     });
 
