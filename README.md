@@ -119,6 +119,7 @@ Vash Static uses modules to organise your templates. By default it assumes you h
 
 ### getFirstArg
 Gets the first argument from the command-line that starts with '--', omitting the '--' and finishing at the next space.
+The watch on models cannot detect the exact page that needs to be rendered, so assumes 'Index.vash'. You can specify a different page though by adding a '/MyPageName' (omit the file extension). 
 
 #### parameters
 - {string[]} - Optionally pass in custom args, say from a child process when testing. 

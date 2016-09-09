@@ -285,12 +285,20 @@ function watchModelsAndTemplates(opts) {
 	      // gets the page name from the expected command-line argument and cancels task if invalid
 	      var pgName = getFirstArg()
 	      if(!pgName) {
-		    warn(NS, "watchModelsAndTemplates", 'You need to pass page name in a flag like this "--home".')
-		    return false
-		  }
+					warn(NS, "watchModelsAndTemplates", 'You need to pass page name in a flag like this "--home".')
+					return false
+				}
 
-		  // var pageFilePath = opts.getTemplatePathCB(pgName);
-		  var pageFilePath = _.template(opts.pageTemplatePath)({moduleName: pgName})
+				// var pageFilePath = opts.getTemplatePathCB(pgName);
+				
+        // allows you to specify a fileName within the module
+        var fileName = "Index.vash";
+        if(pgName.indexOf("/") !== -1) {
+          fileName = pgName.split("/")[1] + ".vash";
+          pgName = pgName.split("/")[0];
+        }
+				
+				var pageFilePath = _.template(opts.pageTemplatePath)({moduleName: pgName})
 	      if( !validatePageTemplate(pageFilePath) ) return
 
 	      // refreshes models.js by combining all models again, then updates the template cache and page html

@@ -1,6 +1,6 @@
 {
   "name": "gulp-vash-static",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Gulp plugin for converting Vash razor templates to static html",
   "main": "index.js",
   "scripts": {
