@@ -297,8 +297,8 @@ function watchModelsAndTemplates(opts) {
           fileName = pgName.split("/")[1] + ".vash";
           pgName = pgName.split("/")[0];
         }
-				
-				var pageFilePath = _.template(opts.pageTemplatePath)({moduleName: pgName})
+
+				var pageFilePath = _.template(opts.pageTemplatePath)({moduleName: pgName, fileName: fileName})
 	      if( !validatePageTemplate(pageFilePath) ) return
 
 	      // refreshes models.js by combining all models again, then updates the template cache and page html
