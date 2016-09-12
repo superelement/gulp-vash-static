@@ -228,6 +228,20 @@ function renderPage(opts) {
 
 
 /**
+ * Gets the correct schema for the 'template path', so it's always just got 1 source of truth.
+ * @param {string} type - Type of module, such as 'pg', 'wg', 'glb'.
+ * @param {string} moduleName - Name of the module (eg a page 'HomePage'' or a widget 'SiteFooter')
+ * @param {string} [fileName] - File name of the template. Defaults to 'Index.vash' if not supplied.
+ */
+function getTemplatePathConfig(type, moduleName, fileName) {
+  return {
+          type: type
+        , moduleName: moduleName
+        , fileName: fileName || "Index.vash"
+    }
+}
+
+/**
  * Convenience function for watching models and templates. All properties are mandatory.
  * @param {object} opts - Options for the function:
 		* @param {object} opts.gulp - instance of gulp
@@ -257,11 +271,7 @@ function watchModelsAndTemplates(opts) {
 				
 	      vashStatic.updateCache({
 	        type: type
-	        , tmplPath: _.template(opts.pageTemplatePath)({
-                type: type
-							, moduleName: moduleName
-							, fileName: fileName || "Index.vash"
-					})
+	        , tmplPath: _.template(opts.pageTemplatePath)(getTemplatePathConfig(type, moduleName, fileName))
 	        , contents: contents
 	        , modelsPath: opts.modelsDest
 	        , cacheDest: opts.cacheDest
@@ -290,8 +300,8 @@ function watchModelsAndTemplates(opts) {
 					return false
 				}
 
-				// var pageFilePath = opts.getTemplatePathCB(pgName);
-				
+        var type = vashStatic.getPageDirType();
+
         // allows you to specify a fileName within the module
         var fileName = "Index.vash";
         if(pgName.indexOf("/") !== -1) {
@@ -299,7 +309,7 @@ function watchModelsAndTemplates(opts) {
           pgName = pgName.split("/")[0];
         }
 
-				var pageFilePath = _.template(opts.pageTemplatePath)({moduleName: pgName, fileName: fileName})
+				var pageFilePath = _.template(opts.pageTemplatePath)(getTemplatePathConfig(type, pgName, fileName))
 	      if( !validatePageTemplate(pageFilePath) ) return
 
 	      // refreshes models.js by combining all models again, then updates the template cache and page html
