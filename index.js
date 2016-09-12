@@ -213,7 +213,7 @@ function renderPage(opts) {
 		if(opts.omitSubDir) {
 			opts.omitSubDir = opts.omitSubDir.split("/").join("");
 			file.path = slash(file.path).replace("/" + opts.omitSubDir + "/", "/");
-			console.log("file.path", file.path)
+			//console.log("file.path", file.path)
 		}
 
 		// make sure the file goes through the next gulp plugin
@@ -237,7 +237,7 @@ function renderPage(opts) {
 		* @param {string} opts.cacheDest - path to the template cache destination
 		* @param {boolean} opts.debugMode - If this is for production, should be false
 		* @param {string[]} opts.dirTypes - Module types (eg "pg", "wg", glb), which correspond to parent directory name of template modules.
-		* @param {string} opts.pageTemplatePath - String for determining the path of the page-level template, where only the page name is known (eg "pg/<%= moduleName %>/tmpl/<%= fileName %>").
+		* @param {string} opts.pageTemplatePath - String for determining the path of the page-level template, where only the page name is known (eg "<%= type %>/<%= moduleName %>/tmpl/<%= fileName %>").
 		* @param {string} opts.combineModelsTask - Gulp task name for combining your models
 		* @param {string} opts.precompileTask - Gulp task name for pre-compiling your vash templates
 		* @param {string} opts.pageRenderTask - Gulp task name for rendering a page
@@ -258,7 +258,8 @@ function watchModelsAndTemplates(opts) {
 	      vashStatic.updateCache({
 	        type: type
 	        , tmplPath: _.template(opts.pageTemplatePath)({
-							moduleName: moduleName
+                type: type
+							, moduleName: moduleName
 							, fileName: fileName || "Index.vash"
 					})
 	        , contents: contents
@@ -266,7 +267,7 @@ function watchModelsAndTemplates(opts) {
 	        , cacheDest: opts.cacheDest
 	        , debugMode: opts.debugMode
 	        , cb: function() {
-						console.log("opts.pageRenderTask", opts.pageRenderTask)
+						//console.log("opts.pageRenderTask", opts.pageRenderTask)
 	        	runSequence(opts.pageRenderTask)
 	        }
 	      })
