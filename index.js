@@ -314,7 +314,7 @@ function watchModelsAndTemplates(opts) {
 
 	      // refreshes models.js by combining all models again, then updates the template cache and page html
 	      runSequence(opts.combineModelsTask, function() {
-	        cacheAndRender(vashStatic.getPageDirType(), pgName, false)
+	        cacheAndRender(vashStatic.getPageDirType(), pgName, false, fileName)
 	      })
 	    }
 	})
