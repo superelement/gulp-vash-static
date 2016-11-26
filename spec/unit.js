@@ -39,6 +39,7 @@ describe("regSlash", function() {
 
 
 describe("getFirstArg", function() {
+
 	var fun = vashStatic.getFirstArg
     
     it("should get the name of the 'home' from the command-line argument", function(done) {
@@ -53,6 +54,34 @@ describe("getFirstArg", function() {
             args = args.replace(/"/g, '').split(" ")
 
             expect(fun(args)).toBe("home")
+            done()
+        })
+    });
+})
+
+
+xdescribe("overrideGetFirstArg", function() {
+    
+    it("should override 'getFirstArg' function and return 'test'.", function(done) {
+
+        vashStatic.overrideGetFirstArg(function() {
+            return 'test';
+        });
+        
+        // just using 'nothing.js' as an example to test command-line code
+        var childProcess = exec('node test-resources/nothing.js --home', function() {
+            
+            // gets args from exec child process
+            var args = childProcess.spawnargs[ childProcess.spawnargs.length -1 ]
+
+            // removes quotes at either end and turns it into an array
+            args = args.replace(/"/g, '').split(" ")
+
+            expect(vashStatic.getFirstArg(args)).toBe("test")
+            
+            // restores the original function for further tests
+            vashStatic.restoreGetFirstArg();
+
             done()
         })
     });

@@ -125,6 +125,11 @@ The watch on models cannot detect the exact page that needs to be rendered, so a
 - {string[]} - Optionally pass in custom args, say from a child process when testing. 
 - returns {string} Argument value without the '--' prefix.
 
+### overrideGetFirstArg
+Allows you to optionally override the functionality of 'getFirstArg', so you can manipulate arguments. First param should be the function and it should return a manipulated string containing the page name.
+
+### restoreGetFirstArg
+Restores 'getFirstArg' after using 'overrideGetFirstArg'.
 
 ### suppressWarnings
 This can be useful if you don't want to output lots of warnings in things like unit tests (which can be annoying).

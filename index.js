@@ -15,7 +15,9 @@ var through = require('through2')
 
 // Consts
 const PLUGIN_NAME = 'gulp-vash-static';
-const NS = "jimd";
+const NS = "gulpVashStatic";
+
+var firstArgOverride; // Function to override the functionality of 'getFirstArg'. 
 
 sav.setNameSpace(PLUGIN_NAME)
 
@@ -53,6 +55,10 @@ function regSlash(str) {
  * @returns {string} Argument value without the '--' prefix.
  */
 function getFirstArg(args) {
+
+    // if 'firstArgOverride' exists, use that instead
+    if(firstArgOverride) return firstArgOverride(args);
+
     var argVal;
 
 		if(!args) args = process.argv; 
@@ -67,6 +73,20 @@ function getFirstArg(args) {
 
     return argVal;
 }
+
+
+/**
+ * Allows you to optionally override the functionality of 'getFirstArg', so you can manipulate arguments. First param should be the function and it should return a manipulated string containing the page name.
+ * @param {Function} fun - Function to override 'getFirstArg'.
+ */
+function overrideGetFirstArg(fun) {
+    if(typeof fun !== "function") {
+      warn(NS, 'overrideGetFirstArg', "Arg 'fun' must be a function. Type was " + (typeof fun) );
+      return;
+    }
+    firstArgOverride = fun;
+}
+
 
 
 /**
@@ -328,6 +348,10 @@ module.exports = {
 	, setPageDirType: vashStatic.setPageDirType
 	, watchModelsAndTemplates: watchModelsAndTemplates
 	, getFirstArg: getFirstArg
+  , overrideGetFirstArg: overrideGetFirstArg
+	, restoreGetFirstArg: function() {
+		firstArgOverride = null;
+	}
 	, testable: {
 		regSlash: regSlash
 		, validatePageTemplate: validatePageTemplate
