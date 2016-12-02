@@ -1,6 +1,7 @@
 var File = require('vinyl')
   , fs = require('fs-extra')
   , slash = require('slash')
+  , _ = require('lodash')
   , exec = require('child_process').exec
 
 // var gulp = require("gulp")
@@ -27,6 +28,12 @@ function getTemplateFile(filePath) {
         , path: filePath
     });
 }
+
+
+afterEach(function() {
+	fs.removeSync(TEMP_DIR);
+})
+
 
 describe("regSlash", function() {
 	var fun = vashStatic.testable.regSlash
@@ -169,6 +176,64 @@ describe("renderPage", function() {
 	})
 })
 
+describe("watchModelsAndTemplates", function() {
+	var fun = vashStatic.watchModelsAndTemplates;
+    var THIS_TEMP_DIR = TEMP_DIR + "watchModelsAndTemplates/";
+    var tempVashFilePath = THIS_TEMP_DIR + "pg/about/Index.vash";
+    var tempModelsFilePath = THIS_TEMP_DIR + "models.js";
+    var tempPrecompiledCacheFilePath = THIS_TEMP_DIR + "example-cache.json";
+
+    var opts = {
+        gulp: null
+        , vashSrc: [ tempVashFilePath ]
+        , modelSrc: []
+        , modelsDest: tempModelsFilePath
+        , cacheDest: tempPrecompiledCacheFilePath
+        , debugMode: true
+        , dirTypes: ["pg"]
+        , pageTemplatePath: THIS_TEMP_DIR + "<%= type %>/<%= moduleName %>/<%= fileName %>"
+
+        // existing gulp tasks to call
+        , combineModelsTask: null
+        , precompileTask: null
+        , pageRenderTask: 'example-render'
+    }
+
+
+    var prepTempFiles = function(isEmptyModel) {
+        // creates temp files for test
+        fs.copySync(aboutTmpl, tempVashFilePath);
+        fs.outputFileSync(tempModelsFilePath, isEmptyModel ? "// empty models file" : TEST_RES + "models.js");
+        fs.copySync(SAMPLE_CACHE, tempPrecompiledCacheFilePath);
+    }
+
+	it("should watch a single vash template (without `modelSrc`, `combineModelsTask` or `precompileTask`) "+
+        "and run the gulp task `pageRenderTask` after that file changes", function(done){
+            
+        prepTempFiles(true);
+
+        var returnedStream;
+        var gulp = require("gulp");
+        
+        // once example render gulp task has been called, close the stream and finish the test
+        gulp.task('example-render', function() {
+            if(returnedStream) {
+                returnedStream.close();
+                done();
+            }
+        });
+
+        var _opts = _.cloneDeep(opts);
+        _opts.gulp = gulp;
+
+		returnedStream = fun(_opts);
+
+        // just replaces the vash file, to trigger the watch
+        setTimeout(function() {
+            fs.copySync(aboutTmpl, tempVashFilePath);
+        }, 1000);
+	})
+})
 /*
 describe("XXXXX", function() {
 	var fun = vashStatic.testable.XXXXX

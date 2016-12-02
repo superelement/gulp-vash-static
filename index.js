@@ -280,15 +280,30 @@ function watchModelsAndTemplates(opts) {
 
 	runSequence = runSequence.use(opts.gulp)
 
+  var preSeq = [];
+  if(opts.combineModelsTask)  preSeq.push(opts.combineModelsTask);
+  if(opts.precompileTask)     preSeq.push(opts.precompileTask);
+  if(opts.pageRenderTask)     preSeq.push(opts.pageRenderTask);
+
 	// just compiles everything once first before watching for changes
-	runSequence([opts.combineModelsTask, opts.precompileTask], opts.pageRenderTask)
+  if(preSeq.length) runSequence.apply(this, preSeq);
 	
 	// runs a watch task (using gulp-watch) that looks for changes to models and vash files
+
+  var queue = []
+    , isUpdating = false;
 
 	return watch(opts.vashSrc.concat(opts.modelSrc), function(vinyl) {
 			
 	    var cacheAndRender = function(type, moduleName, contents, fileName) {
 				
+        // if currently updating the cache, put items in a queue for later
+        if(isUpdating) {
+          queue.push({ type:type, moduleName:moduleName, contents:contents, fileName:fileName });
+          return
+        }
+
+        isUpdating = true;
 	      vashStatic.updateCache({
 	        type: type
 	        , tmplPath: _.template(opts.pageTemplatePath)(getTemplatePathConfig(type, moduleName, fileName))
@@ -297,8 +312,12 @@ function watchModelsAndTemplates(opts) {
 	        , cacheDest: opts.cacheDest
 	        , debugMode: opts.debugMode
 	        , cb: function() {
-						//console.log("opts.pageRenderTask", opts.pageRenderTask)
+            isUpdating = false;
 	        	runSequence(opts.pageRenderTask)
+            if(queue.length) {
+              var firstItem = queue.shift();
+              cacheAndRender(firstItem.type, firstItem.moduleName, firstItem.contents, firstItem.fileName);
+            }
 	        }
 	      })
 	    }
