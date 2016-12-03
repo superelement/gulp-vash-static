@@ -17,7 +17,7 @@ var through = require('through2')
 const PLUGIN_NAME = 'gulp-vash-static';
 const NS = "gulpVashStatic";
 
-var firstArgOverride; // Function to override the functionality of 'getFirstArg'. 
+var argFunctionOverride; // Function to override the functionality of 'getAllArgs'. 
 
 sav.setNameSpace(PLUGIN_NAME)
 
@@ -48,43 +48,45 @@ function regSlash(str) {
     return str;
 }
 
-
 /**
- * Gets the first argument from the command-line that starts with '--', omitting the '--' and finishing at the next space.
+ * Gets the all argument from the command-line that starts with '--', omitting the '--' and finishing at the next space.
  * @param {string[]} [args] - Optionally pass in custom args, say from a child process when testing. 
- * @returns {string} Argument value without the '--' prefix.
+ * @returns {string[]} Argument values without the '--' prefix.
  */
-function getFirstArg(args) {
+function getAllArgs(args) {
+  
+    // if 'argFunctionOverride' exists, use that instead
+    if(argFunctionOverride) return argFunctionOverride(args);
 
-    // if 'firstArgOverride' exists, use that instead
-    if(firstArgOverride) return firstArgOverride(args);
+		args = args || process.argv;
 
-    var argVal;
-
-		if(!args) args = process.argv; 
-
+    var argVals = [];
     args.forEach(function (arg) {
         if (arg.indexOf("--") === 0) {
-            var propArr = arg.split(" ")
-            // argVal = propArr[0].toLowerCase().substr(2)
-            argVal = propArr[0].substr(2)
+            var propArr = arg.split(" ");
+            var argVal = propArr[0].substr(2);
+            
+            // allows shortcut for styleguide pages, starting with 'SG_'
+            if(argVal && argVal.indexOf("SG_") === 0) argVal = "styleGuide/" + argVal;
+            
+            argVals.push( argVal );
         }
     });
 
-    return argVal;
+    return argVals;
 }
 
 
 /**
- * Allows you to optionally override the functionality of 'getFirstArg', so you can manipulate arguments. First param should be the function and it should return a manipulated string containing the page name.
- * @param {Function} fun - Function to override 'getFirstArg'.
+ * Allows you to optionally override the functionality of 'getAllArgs', so you can manipulate arguments. First param should be the function and it should return a manipulated string containing the page name.
+ * @param {Function} fun - Function to override 'getAllArgs'.
  */
-function overrideGetFirstArg(fun) {
+function overrideGetAllArgs(fun) {
     if(typeof fun !== "function") {
-      warn(NS, 'overrideGetFirstArg', "Arg 'fun' must be a function. Type was " + (typeof fun) );
+      warn(NS, 'overrideGetAllArgs', "Arg 'fun' must be a function. Type was " + (typeof fun) );
       return;
     }
-    firstArgOverride = fun;
+    argFunctionOverride = fun;
 }
 
 
@@ -278,7 +280,7 @@ function getTemplatePathConfig(type, moduleName, fileName) {
  */
 function watchModelsAndTemplates(opts) {
 
-	runSequence = runSequence.use(opts.gulp)
+	var runSeq = runSequence.use(opts.gulp)
 
   var preSeq = [];
   if(opts.combineModelsTask)  preSeq.push(opts.combineModelsTask);
@@ -286,7 +288,7 @@ function watchModelsAndTemplates(opts) {
   if(opts.pageRenderTask)     preSeq.push(opts.pageRenderTask);
 
 	// just compiles everything once first before watching for changes
-  if(preSeq.length) runSequence.apply(this, preSeq);
+  if(preSeq.length) runSeq.apply(this, preSeq);
 	
 	// runs a watch task (using gulp-watch) that looks for changes to models and vash files
 
@@ -294,7 +296,7 @@ function watchModelsAndTemplates(opts) {
     , isUpdating = false;
 
 	return watch(opts.vashSrc.concat(opts.modelSrc), function(vinyl) {
-			
+
 	    var cacheAndRender = function(type, moduleName, contents, fileName) {
 				
         // if currently updating the cache, put items in a queue for later
@@ -313,10 +315,16 @@ function watchModelsAndTemplates(opts) {
 	        , debugMode: opts.debugMode
 	        , cb: function() {
             isUpdating = false;
-	        	runSequence(opts.pageRenderTask)
+            
+            // goes throug queue until none left
             if(queue.length) {
               var firstItem = queue.shift();
+              console.log("firstItem.fileName", firstItem.fileName)
               cacheAndRender(firstItem.type, firstItem.moduleName, firstItem.contents, firstItem.fileName);
+            } else {
+
+              // console.log("opts.pageRenderTask")
+              runSeq(opts.pageRenderTask)
             }
 	        }
 	      })
@@ -332,28 +340,32 @@ function watchModelsAndTemplates(opts) {
 
 	    } else {
 
+        var pgNames = getAllArgs();
+
 	      // gets the page name from the expected command-line argument and cancels task if invalid
-	      var pgName = getFirstArg()
-	      if(!pgName) {
+	      if(!pgNames.length) {
 					warn(NS, "watchModelsAndTemplates", 'You need to pass page name in a flag like this "--home".')
 					return false
 				}
 
         var type = vashStatic.getPageDirType();
 
-        // allows you to specify a fileName within the module
-        var fileName = "Index.vash";
-        if(pgName.indexOf("/") !== -1) {
-          fileName = pgName.split("/")[1] + ".vash";
-          pgName = pgName.split("/")[0];
-        }
+	      runSeq(opts.combineModelsTask, function() {
+          pgNames.forEach(function(pgName) {
 
-				var pageFilePath = _.template(opts.pageTemplatePath)(getTemplatePathConfig(type, pgName, fileName))
-	      if( !validatePageTemplate(pageFilePath) ) return
+            // allows you to specify a fileName within the module
+            var fileName = "Index.vash";
+            if(pgName.indexOf("/") !== -1) {
+              fileName = pgName.split("/")[1] + ".vash";
+              pgName = pgName.split("/")[0];
+            }
 
-	      // refreshes models.js by combining all models again, then updates the template cache and page html
-	      runSequence(opts.combineModelsTask, function() {
-	        cacheAndRender(vashStatic.getPageDirType(), pgName, false, fileName)
+            var pageFilePath = _.template(opts.pageTemplatePath)(getTemplatePathConfig(type, pgName, fileName))
+            if( !validatePageTemplate(pageFilePath) ) return
+
+            // refreshes models.js by combining all models again, then updates the template cache and page html
+            cacheAndRender(vashStatic.getPageDirType(), pgName, false, fileName);
+          });
 	      })
 	    }
 	})
@@ -366,10 +378,10 @@ module.exports = {
 	, precompile: precompileTemplateCache
 	, setPageDirType: vashStatic.setPageDirType
 	, watchModelsAndTemplates: watchModelsAndTemplates
-	, getFirstArg: getFirstArg
-  , overrideGetFirstArg: overrideGetFirstArg
-	, restoreGetFirstArg: function() {
-		firstArgOverride = null;
+	, getAllArgs: getAllArgs
+  , overrideGetAllArgs: overrideGetAllArgs
+	, restoreGetAllArgs: function() {
+		argFunctionOverride = null;
 	}
 	, testable: {
 		regSlash: regSlash
