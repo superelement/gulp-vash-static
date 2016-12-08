@@ -319,7 +319,6 @@ function watchModelsAndTemplates(opts) {
             // goes throug queue until none left
             if(queue.length) {
               var firstItem = queue.shift();
-              console.log("firstItem.fileName", firstItem.fileName)
               cacheAndRender(firstItem.type, firstItem.moduleName, firstItem.contents, firstItem.fileName);
             } else {
 
