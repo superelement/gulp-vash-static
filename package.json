@@ -32,7 +32,7 @@
     "slash": "^1.0.0",
     "through2": "^2.0.1",
     "vash": "^0.12.1",
-    "vash-static": "1.0.9"
+    "vash-static": "1.0.10"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
